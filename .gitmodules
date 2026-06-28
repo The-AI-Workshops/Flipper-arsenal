@@ -1,0 +1,18 @@
+[submodule "Applications/Momentum-Apps"]
+	path = Applications/Momentum-Apps
+	url = https://github.com/Next-Flip/Momentum-Apps.git
+[submodule "Infrared/IRDB"]
+	path = Infrared/IRDB
+	url = https://github.com/Lucaslhm/Flipper-IRDB.git
+[submodule "Sub-GHz/Community-DB"]
+	path = Sub-GHz/Community-DB
+	url = https://github.com/Zero-Sploit/FlipperZero-Subghz-DB.git
+[submodule "Sub-GHz/Bruteforce"]
+	path = Sub-GHz/Bruteforce
+	url = https://github.com/tobiabocchi/flipperzero-bruteforce.git
+[submodule "Dev/flipper-zero-tutorials"]
+	path = Dev/flipper-zero-tutorials
+	url = https://github.com/jamisonderek/flipper-zero-tutorials.git
+[submodule "Resources/awesome-flipperzero"]
+	path = Resources/awesome-flipperzero
+	url = https://github.com/djsime1/awesome-flipperzero.git
