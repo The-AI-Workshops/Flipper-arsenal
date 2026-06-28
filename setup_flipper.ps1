@@ -149,7 +149,6 @@ if (Ask-YesNo "Install qFlipper?") {
             Write-Info "Search for qFlipper.exe in Start Menu or Program Files."
         }
     }
-    }
 } else {
     Write-Warn "Skipping qFlipper."
 }
