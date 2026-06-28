@@ -89,15 +89,17 @@ if ($gitOk) {
 # --- Helpers: find qFlipper exe -----------------------------------------------
 
 function Find-QFlipper {
+    $pf86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
     $candidates = @(
         "$env:ProgramFiles\qFlipper\qFlipper.exe",
         "$env:ProgramFiles\Flipper Devices\qFlipper\qFlipper.exe",
-        "${env:ProgramFiles(x86)}\qFlipper\qFlipper.exe",
+        "$pf86\qFlipper\qFlipper.exe",
         "$env:LOCALAPPDATA\Programs\qFlipper\qFlipper.exe",
         "$env:LOCALAPPDATA\Programs\Flipper Devices\qFlipper\qFlipper.exe"
     )
-    foreach ($p in $candidates) { if (Test-Path $p) { return $p } }
-    # Brute-force search under Program Files as fallback
+    foreach ($p in $candidates) {
+        if (Test-Path $p) { return $p }
+    }
     $found = Get-ChildItem "$env:ProgramFiles" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($found) { return $found.FullName }
     $found = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -111,8 +113,13 @@ Write-Header "Step 2 / 6 - qFlipper"
 Write-Info "Official desktop app: firmware updates, file manager, screen streaming."
 Write-Host ""
 
-if (Ask-YesNo "Install qFlipper?") {
-    # Check if already installed first
+$doQF = Ask-YesNo "Install qFlipper?"
+
+if (-not $doQF) {
+    Write-Warn "Skipping qFlipper."
+}
+
+if ($doQF) {
     $qfExe = Find-QFlipper
     if ($qfExe) {
         Write-OK "qFlipper already installed: $qfExe"
@@ -140,7 +147,6 @@ if (Ask-YesNo "Install qFlipper?") {
             }
         }
 
-        # Locate after install
         $qfExe = Find-QFlipper
         if ($qfExe) {
             Write-OK "Found: $qfExe"
@@ -149,8 +155,6 @@ if (Ask-YesNo "Install qFlipper?") {
             Write-Info "Search for qFlipper.exe in Start Menu or Program Files."
         }
     }
-} else {
-    Write-Warn "Skipping qFlipper."
 }
 
 # --- Step 3: Clone Repos ------------------------------------------------------
