@@ -2,6 +2,15 @@
 # Requires: Windows 10/11, PowerShell 5+
 # Usage: Double-click setup_flipper.bat OR run directly in PowerShell
 
+# Ctrl+C exits cleanly at any point
+[Console]::TreatControlCAsInput = $false
+$ErrorActionPreference = "Stop"
+trap {
+    Write-Host ""
+    Write-Host "  Setup cancelled." -ForegroundColor Yellow
+    exit 0
+}
+
 $ARSENAL_URL  = "https://github.com/The-AI-Workshops/Flipper-arsenal.git"
 $UBER_URL     = "https://github.com/UberGuidoZ/Flipper.git"
 $ARSENAL_DIR  = "$env:USERPROFILE\Documents\Flipper-arsenal"
