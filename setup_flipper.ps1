@@ -169,7 +169,7 @@ if ($doQF) {
     } else {
         $wingetOk = $false
         try {
-            winget install --id Flipper.qFlipper -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
+            winget install --id FlipperDevicesInc.qFlipper -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
             if ($LASTEXITCODE -eq 0) {
                 $wingetOk = $true
                 Write-OK "qFlipper installed via winget."
