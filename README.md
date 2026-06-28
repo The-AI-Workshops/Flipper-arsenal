@@ -8,13 +8,55 @@ Forked from [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper) and exte
 
 ## Quick Start (Windows)
 
-1. Connect Flipper via USB
-2. On Flipper: **Settings → USB → Mass Storage**
-3. Note SD card drive letter in File Explorer (e.g. `E:`)
-4. Edit `setup_flipper.bat` — set `FLIPPER=E:` to match
-5. Right-click → **Run as administrator**
+**One script does everything — git, qFlipper, repo clone, module selection, SD copy.**
 
-The script installs git if missing, clones this repo, and copies all files to the correct SD card folders automatically.
+```
+1. Download or clone this repo
+2. Double-click  setup_flipper.bat
+3. Follow the interactive menu
+```
+
+### What the installer does
+
+| Step | Action |
+|---|---|
+| 1 | Installs **Git** if missing (silent, via official installer) |
+| 2 | Installs **qFlipper** — official Flipper desktop app (via winget or direct download) |
+| 3 | Clones **this repo** (`The-AI-Workshops/Flipper-arsenal`) or pulls latest |
+| 4 | **Interactive module selection** — pick only what you want |
+| 5 | Auto-detects SD card drive letter, copies files to correct paths |
+
+### Module Selection Menu
+
+The installer asks which community repos to download:
+
+```
+Install IR Signal Database (~500MB, 10k+ codes)?  [Y/N]
+Install Momentum FAP Apps (245+ apps)?            [Y/N]
+Install Sub-GHz Signal DB?                         [Y/N]
+Install Sub-GHz Bruteforce Tool?                   [Y/N]
+Install Dev Tutorials (C/GPIO/UART/JS)?            [Y/N]
+Install Awesome Flipper index?                     [Y/N]
+```
+
+Skip anything you don't need. Core files always install.
+
+### After Install
+
+1. Safely eject the SD card in File Explorer
+2. Press **Back** on Flipper to rescan
+3. Update firmware to Momentum via qFlipper:
+   → `github.com/Next-Flip/Momentum-Firmware/releases`
+
+### If you already have the repo cloned
+
+```powershell
+# Pull latest + update all submodules
+bash update_all.sh
+
+# Or just run the installer again — it detects existing clone and pulls
+setup_flipper.bat
+```
 
 ---
 
