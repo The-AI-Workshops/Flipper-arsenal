@@ -1,9 +1,9 @@
-# Flipper Arsenal — Windows Setup Script
+# Flipper Arsenal - Windows Setup Script
 # Requires: Windows 10/11, PowerShell 5+
 # Usage: Double-click setup_flipper.bat OR run directly in PowerShell
 
 # Ctrl+C exits cleanly at any point
-[Console]::TreatControlCAsInput = $false
+try { [Console]::TreatControlCAsInput = $false } catch {}
 $ErrorActionPreference = "Stop"
 trap {
     Write-Host ""
@@ -17,13 +17,13 @@ $ARSENAL_DIR  = "$env:USERPROFILE\Documents\Flipper-arsenal"
 $UBER_DIR     = "$env:USERPROFILE\Documents\Flipper-arsenal\_UberGuidoZ"
 $QFLIPPER_URL = "https://update.flipperzero.one/builds/qFlipper/release/qFlipper-windows-installer-x86_64.exe"
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────
+# --- Helpers ------------------------------------------------------------------
 
 function Write-Header($text) {
     Write-Host ""
-    Write-Host "  ══════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "  ==============================================" -ForegroundColor Cyan
     Write-Host "   $text" -ForegroundColor White
-    Write-Host "  ══════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "  ==============================================" -ForegroundColor Cyan
     Write-Host ""
 }
 
@@ -42,28 +42,28 @@ function Safe-Copy($src, $dst, $label) {
         New-Item -ItemType Directory -Force $dst | Out-Null
         Copy-Item "$src\*" $dst -Recurse -Force -ErrorAction SilentlyContinue
         $count = (Get-ChildItem $dst -Recurse -File).Count
-        Write-OK "$label → $dst ($count files)"
+        Write-OK "$label -> $dst ($count files)"
     } else {
-        Write-Warn "$label — source not found, skipping ($src)"
+        Write-Warn "$label - source not found, skipping ($src)"
     }
 }
 
-# ─── Banner ───────────────────────────────────────────────────────────────────
+# --- Banner -------------------------------------------------------------------
 
 Clear-Host
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "  ║        FLIPPER ARSENAL — SETUP v2            ║" -ForegroundColor Cyan
-Write-Host "  ║   Momentum firmware loadout installer         ║" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "  +==============================================+" -ForegroundColor Cyan
+Write-Host "  |        FLIPPER ARSENAL - SETUP v2            |" -ForegroundColor Cyan
+Write-Host "  |   Momentum firmware loadout installer         |" -ForegroundColor Cyan
+Write-Host "  +==============================================+" -ForegroundColor Cyan
 Write-Host ""
 Write-Info "Arsenal : $ARSENAL_URL"
 Write-Info "Local   : $ARSENAL_DIR"
 Write-Host ""
 
-# ─── Step 1: Git ──────────────────────────────────────────────────────────────
+# --- Step 1: Git --------------------------------------------------------------
 
-Write-Header "Step 1 / 6 — Git"
+Write-Header "Step 1 / 6 - Git"
 
 $gitOk = $false
 try { git --version 2>&1 | Out-Null; $gitOk = $true } catch {}
@@ -86,7 +86,7 @@ if ($gitOk) {
     }
 }
 
-# ─── Helpers: find qFlipper exe ───────────────────────────────────────────────
+# --- Helpers: find qFlipper exe -----------------------------------------------
 
 function Find-QFlipper {
     $candidates = @(
@@ -105,9 +105,9 @@ function Find-QFlipper {
     return $null
 }
 
-# ─── Step 2: qFlipper ─────────────────────────────────────────────────────────
+# --- Step 2: qFlipper ---------------------------------------------------------
 
-Write-Header "Step 2 / 6 — qFlipper"
+Write-Header "Step 2 / 6 - qFlipper"
 Write-Info "Official desktop app: firmware updates, file manager, screen streaming."
 Write-Host ""
 
@@ -131,7 +131,7 @@ if (Ask-YesNo "Install qFlipper?") {
             $qfPath = "$env:TEMP\qFlipper_installer.exe"
             try {
                 Invoke-WebRequest -Uri $QFLIPPER_URL -OutFile $qfPath -UseBasicParsing
-                Write-Host "  Launching qFlipper installer — follow the wizard..." -ForegroundColor Yellow
+                Write-Host "  Launching qFlipper installer - follow the wizard..." -ForegroundColor Yellow
                 Start-Process -FilePath $qfPath -Wait
                 Write-OK "qFlipper installer completed."
             } catch {
@@ -153,14 +153,14 @@ if (Ask-YesNo "Install qFlipper?") {
     Write-Warn "Skipping qFlipper."
 }
 
-# ─── Step 3: Clone Repos ──────────────────────────────────────────────────────
+# --- Step 3: Clone Repos ------------------------------------------------------
 
-Write-Header "Step 3 / 6 — Clone Repos"
+Write-Header "Step 3 / 6 - Clone Repos"
 
-# 3a — Flipper Arsenal (our repo)
+# 3a - Flipper Arsenal (our repo)
 Write-Host "  [3a] Flipper Arsenal..." -ForegroundColor Yellow
 if (Test-Path "$ARSENAL_DIR\.git") {
-    Write-OK "Arsenal exists — pulling latest..."
+    Write-OK "Arsenal exists - pulling latest..."
     git -C $ARSENAL_DIR pull --ff-only
 } else {
     git clone $ARSENAL_URL $ARSENAL_DIR
@@ -168,34 +168,34 @@ if (Test-Path "$ARSENAL_DIR\.git") {
     Write-OK "Arsenal cloned."
 }
 
-# 3b — UberGuidoZ/Flipper (core signal files, shallow)
+# 3b - UberGuidoZ/Flipper (core signal files, shallow)
 Write-Host ""
-Write-Host "  [3b] UberGuidoZ/Flipper (core signals — shallow clone)..." -ForegroundColor Yellow
+Write-Host "  [3b] UberGuidoZ/Flipper (core signals - shallow clone)..." -ForegroundColor Yellow
 Write-Info "Contains: IR, Sub-GHz, NFC, RFID, BadUSB, Music, Graphics files"
 if (Test-Path "$UBER_DIR\.git") {
-    Write-OK "UberGuidoZ exists — pulling latest..."
+    Write-OK "UberGuidoZ exists - pulling latest..."
     git -C $UBER_DIR pull --ff-only
 } else {
     git clone --depth 1 $UBER_URL $UBER_DIR
-    if ($LASTEXITCODE -ne 0) { Write-Warn "UberGuidoZ clone failed — SD copy will skip missing files." }
+    if ($LASTEXITCODE -ne 0) { Write-Warn "UberGuidoZ clone failed - SD copy will skip missing files." }
     else { Write-OK "UberGuidoZ cloned (shallow)." }
 }
 
-# ─── Step 4: Community Modules ────────────────────────────────────────────────
+# --- Step 4: Community Modules ------------------------------------------------
 
-Write-Header "Step 4 / 6 — Community Modules"
+Write-Header "Step 4 / 6 - Community Modules"
 Write-Host ""
 
 $modules = @(
-    [PSCustomObject]@{ Key="Infrared/IRDB";                Label="[-> SD]  IR Database — 10k+ codes (~500 MB)";       SD=$true  },
-    [PSCustomObject]@{ Key="Applications/Momentum-Apps";   Label="[-> SD]  Momentum FAP Apps — 245+ apps";            SD=$true  },
-    [PSCustomObject]@{ Key="Sub-GHz/Community-DB";         Label="[-> SD]  Sub-GHz Signal DB — community .sub files"; SD=$true  },
+    [PSCustomObject]@{ Key="Infrared/IRDB";                Label="[-> SD]  IR Database - 10k+ codes (~500 MB)";       SD=$true  },
+    [PSCustomObject]@{ Key="Applications/Momentum-Apps";   Label="[-> SD]  Momentum FAP Apps - 245+ apps";            SD=$true  },
+    [PSCustomObject]@{ Key="Sub-GHz/Community-DB";         Label="[-> SD]  Sub-GHz Signal DB - community .sub files"; SD=$true  },
     [PSCustomObject]@{ Key="Sub-GHz/Bruteforce";           Label="[-> SD]  Sub-GHz Bruteforce Tool";                  SD=$true  },
-    [PSCustomObject]@{ Key="Dev/flipper-zero-tutorials";   Label="[local]  Dev Tutorials — C / GPIO / UART / JS";     SD=$false },
-    [PSCustomObject]@{ Key="Resources/awesome-flipperzero";Label="[local]  Awesome Flipper — master resource index";  SD=$false }
+    [PSCustomObject]@{ Key="Dev/flipper-zero-tutorials";   Label="[local]  Dev Tutorials - C / GPIO / UART / JS";     SD=$false },
+    [PSCustomObject]@{ Key="Resources/awesome-flipperzero";Label="[local]  Awesome Flipper - master resource index";  SD=$false }
 )
 
-# ── Try WinForms checkbox dialog (requires STA thread) ────────────────────────
+# -- Try WinForms checkbox dialog (requires STA thread) ------------------------
 function Show-ModuleForm($moduleList) {
     $sync = [hashtable]::Synchronized(@{ Checked = @(); OK = $false })
 
@@ -213,7 +213,7 @@ function Show-ModuleForm($moduleList) {
         Add-Type -AssemblyName System.Drawing
 
         $form              = New-Object System.Windows.Forms.Form
-        $form.Text         = "Flipper Arsenal — Select Modules"
+        $form.Text         = "Flipper Arsenal - Select Modules"
         $form.Size         = New-Object System.Drawing.Size(580, 370)
         $form.StartPosition= "CenterScreen"
         $form.TopMost      = $true
@@ -262,7 +262,7 @@ function Show-ModuleForm($moduleList) {
         $form.Controls.Add($btnNone)
 
         $btnOK             = New-Object System.Windows.Forms.Button
-        $btnOK.Text        = "OK — Download Selected"
+        $btnOK.Text        = "OK - Download Selected"
         $btnOK.Location    = New-Object System.Drawing.Point(348, 248)
         $btnOK.Size        = New-Object System.Drawing.Size(212, 30)
         $btnOK.BackColor   = [System.Drawing.Color]::FromArgb(0, 120, 215)
@@ -289,7 +289,7 @@ function Show-ModuleForm($moduleList) {
     return $sync
 }
 
-# ── Run selector, fall back to console menu if GUI fails ──────────────────────
+# -- Run selector, fall back to console menu if GUI fails ----------------------
 $selectedModules = @()
 $guiOk = $false
 
@@ -300,14 +300,14 @@ try {
         $guiOk = $true
         foreach ($i in $sync.Checked) { $selectedModules += $modules[$i] }
     } elseif (-not $sync.OK -and $sync.Checked.Count -eq 0) {
-        Write-Warn "Window closed without selecting — defaulting to console menu."
+        Write-Warn "Window closed without selecting - defaulting to console menu."
     }
 } catch {
-    Write-Warn "GUI unavailable — using console menu."
+    Write-Warn "GUI unavailable - using console menu."
 }
 
 if (-not $guiOk) {
-    # ── Console fallback: numbered toggle menu ─────────────────────────────────
+    # -- Console fallback: numbered toggle menu ---------------------------------
     $checked = @($true, $true, $true, $true, $true, $true)  # all on by default
     do {
         Write-Host ""
@@ -335,23 +335,23 @@ if (-not $guiOk) {
     }
 }
 
-# ── Download selected ──────────────────────────────────────────────────────────
+# -- Download selected ----------------------------------------------------------
 if ($selectedModules.Count -gt 0) {
     Write-Host ""
     foreach ($m in $selectedModules) {
         Write-Host "  Downloading $($m.Key)..." -ForegroundColor Yellow
         git -C $ARSENAL_DIR submodule update --init --depth 1 -- $m.Key
-        if ($LASTEXITCODE -eq 0) { Write-OK $m.Key } else { Write-Warn "$($m.Key) failed — skipping" }
+        if ($LASTEXITCODE -eq 0) { Write-OK $m.Key } else { Write-Warn "$($m.Key) failed - skipping" }
     }
 } else {
-    Write-Warn "No modules selected — skipping downloads."
+    Write-Warn "No modules selected - skipping downloads."
 }
 
-# ─── Step 5: SD Card Detection ────────────────────────────────────────────────
+# --- Step 5: SD Card Detection ------------------------------------------------
 
-Write-Header "Step 5 / 6 — Flipper SD Card"
+Write-Header "Step 5 / 6 - Flipper SD Card"
 Write-Host "  Flipper must be in Mass Storage mode:" -ForegroundColor White
-Write-Host "  Settings → USB → Mass Storage" -ForegroundColor Yellow
+Write-Host "  Settings -> USB -> Mass Storage" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Scanning for removable drives..." -ForegroundColor DarkGray
 Write-Host ""
@@ -400,12 +400,12 @@ if ($flipperDrive -and -not (Test-Path "$flipperDrive\")) {
     Read-Host "  Press Enter to exit"; exit 1
 }
 
-# ─── Step 6: Copy to SD ───────────────────────────────────────────────────────
+# --- Step 6: Copy to SD -------------------------------------------------------
 
-Write-Header "Step 6 / 6 — Copy Files to SD ($flipperDrive)"
+Write-Header "Step 6 / 6 - Copy Files to SD ($flipperDrive)"
 
 if (-not $flipperDrive) {
-    Write-Warn "No SD drive selected — skipping file copy."
+    Write-Warn "No SD drive selected - skipping file copy."
 } else {
     Write-Info "Creating SD folder structure..."
 
@@ -439,7 +439,7 @@ if (-not $flipperDrive) {
     }
 }
 
-# ─── Done ─────────────────────────────────────────────────────────────────────
+# --- Done ---------------------------------------------------------------------
 
 Write-Header "Setup Complete!"
 if ($flipperDrive) {
@@ -453,12 +453,12 @@ $qfFinal = Find-QFlipper
 if ($qfFinal) {
     Write-Host "  qFlipper         : $qfFinal" -ForegroundColor Green
 } else {
-    Write-Host "  qFlipper         : not found — search Start Menu" -ForegroundColor Magenta
+    Write-Host "  qFlipper         : not found - search Start Menu" -ForegroundColor Magenta
 }
 
 Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor White
-Write-Info "1. Safely eject $flipperDrive in File Explorer (right-click → Eject)"
+Write-Info "1. Safely eject $flipperDrive in File Explorer (right-click -> Eject)"
 Write-Info "2. Press Back on Flipper to rescan SD"
 Write-Info "3. Flash Momentum firmware via qFlipper:"
 Write-Info "   github.com/Next-Flip/Momentum-Firmware/releases"
