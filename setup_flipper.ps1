@@ -149,91 +149,158 @@ if (Test-Path "$UBER_DIR\.git") {
 # ─── Step 4: Community Modules ────────────────────────────────────────────────
 
 Write-Header "Step 4 / 6 — Community Modules"
-Write-Info "A selection window will open. Check the modules you want, then click OK."
 Write-Host ""
 
 $modules = @(
-    [PSCustomObject]@{ Key="Infrared/IRDB";                Label="[→ SD]  IR Database — 10k+ codes (~500 MB)";        SD=$true  },
-    [PSCustomObject]@{ Key="Applications/Momentum-Apps";   Label="[→ SD]  Momentum FAP Apps — 245+ apps";             SD=$true  },
-    [PSCustomObject]@{ Key="Sub-GHz/Community-DB";         Label="[→ SD]  Sub-GHz Signal DB — community .sub files";  SD=$true  },
-    [PSCustomObject]@{ Key="Sub-GHz/Bruteforce";           Label="[→ SD]  Sub-GHz Bruteforce Tool";                   SD=$true  },
-    [PSCustomObject]@{ Key="Dev/flipper-zero-tutorials";   Label="[local] Dev Tutorials — C / GPIO / UART / JS";      SD=$false },
-    [PSCustomObject]@{ Key="Resources/awesome-flipperzero";Label="[local] Awesome Flipper — master resource index";   SD=$false }
+    [PSCustomObject]@{ Key="Infrared/IRDB";                Label="[-> SD]  IR Database — 10k+ codes (~500 MB)";       SD=$true  },
+    [PSCustomObject]@{ Key="Applications/Momentum-Apps";   Label="[-> SD]  Momentum FAP Apps — 245+ apps";            SD=$true  },
+    [PSCustomObject]@{ Key="Sub-GHz/Community-DB";         Label="[-> SD]  Sub-GHz Signal DB — community .sub files"; SD=$true  },
+    [PSCustomObject]@{ Key="Sub-GHz/Bruteforce";           Label="[-> SD]  Sub-GHz Bruteforce Tool";                  SD=$true  },
+    [PSCustomObject]@{ Key="Dev/flipper-zero-tutorials";   Label="[local]  Dev Tutorials — C / GPIO / UART / JS";     SD=$false },
+    [PSCustomObject]@{ Key="Resources/awesome-flipperzero";Label="[local]  Awesome Flipper — master resource index";  SD=$false }
 )
 
-# ── Windows Forms checkbox dialog ─────────────────────────────────────────────
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
+# ── Try WinForms checkbox dialog (requires STA thread) ────────────────────────
+function Show-ModuleForm($moduleList) {
+    $sync = [hashtable]::Synchronized(@{ Checked = @(); OK = $false })
 
-$form              = New-Object System.Windows.Forms.Form
-$form.Text         = "Flipper Arsenal — Select Modules"
-$form.Size         = New-Object System.Drawing.Size(560, 360)
-$form.StartPosition= "CenterScreen"
-$form.FormBorderStyle = "FixedDialog"
-$form.MaximizeBox  = $false
-$form.Font         = New-Object System.Drawing.Font("Segoe UI", 10)
-$form.BackColor    = [System.Drawing.Color]::FromArgb(30, 30, 30)
-$form.ForeColor    = [System.Drawing.Color]::White
+    $rs = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
+    $rs.ApartmentState = "STA"
+    $rs.ThreadOptions  = "ReuseThread"
+    $rs.Open()
+    $rs.SessionStateProxy.SetVariable("moduleList", $moduleList)
+    $rs.SessionStateProxy.SetVariable("sync", $sync)
 
-$label             = New-Object System.Windows.Forms.Label
-$label.Text        = "Select modules to download:  [→ SD] = copied to Flipper   [local] = PC only"
-$label.Location    = New-Object System.Drawing.Point(12, 10)
-$label.Size        = New-Object System.Drawing.Size(520, 22)
-$label.ForeColor   = [System.Drawing.Color]::FromArgb(160, 160, 160)
-$form.Controls.Add($label)
+    $ps = [System.Management.Automation.PowerShell]::Create()
+    $ps.Runspace = $rs
+    [void]$ps.AddScript({
+        Add-Type -AssemblyName System.Windows.Forms
+        Add-Type -AssemblyName System.Drawing
 
-$clb               = New-Object System.Windows.Forms.CheckedListBox
-$clb.Location      = New-Object System.Drawing.Point(12, 38)
-$clb.Size          = New-Object System.Drawing.Size(520, 190)
-$clb.CheckOnClick  = $true
-$clb.BackColor     = [System.Drawing.Color]::FromArgb(45, 45, 45)
-$clb.ForeColor     = [System.Drawing.Color]::White
-$clb.BorderStyle   = "FixedSingle"
-$clb.Font          = New-Object System.Drawing.Font("Consolas", 10)
-foreach ($m in $modules) { $clb.Items.Add($m.Label, $true) | Out-Null }  # all checked by default
-$form.Controls.Add($clb)
+        $form              = New-Object System.Windows.Forms.Form
+        $form.Text         = "Flipper Arsenal — Select Modules"
+        $form.Size         = New-Object System.Drawing.Size(580, 370)
+        $form.StartPosition= "CenterScreen"
+        $form.TopMost      = $true
+        $form.FormBorderStyle = "FixedDialog"
+        $form.MaximizeBox  = $false
+        $form.BackColor    = [System.Drawing.Color]::FromArgb(28, 28, 28)
+        $form.ForeColor    = [System.Drawing.Color]::White
+        $form.Font         = New-Object System.Drawing.Font("Segoe UI", 10)
 
-# Select All / None buttons
-$btnAll            = New-Object System.Windows.Forms.Button
-$btnAll.Text       = "Select All"
-$btnAll.Location   = New-Object System.Drawing.Point(12, 238)
-$btnAll.Size       = New-Object System.Drawing.Size(100, 30)
-$btnAll.BackColor  = [System.Drawing.Color]::FromArgb(60, 60, 60)
-$btnAll.ForeColor  = [System.Drawing.Color]::White
-$btnAll.FlatStyle  = "Flat"
-$btnAll.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $true) } })
-$form.Controls.Add($btnAll)
+        $lbl               = New-Object System.Windows.Forms.Label
+        $lbl.Text          = "Check modules to download.   [-> SD] copies to Flipper.   [local] stays on PC."
+        $lbl.Location      = New-Object System.Drawing.Point(12, 10)
+        $lbl.Size          = New-Object System.Drawing.Size(548, 20)
+        $lbl.ForeColor     = [System.Drawing.Color]::FromArgb(150, 150, 150)
+        $form.Controls.Add($lbl)
 
-$btnNone           = New-Object System.Windows.Forms.Button
-$btnNone.Text      = "Select None"
-$btnNone.Location  = New-Object System.Drawing.Point(120, 238)
-$btnNone.Size      = New-Object System.Drawing.Size(100, 30)
-$btnNone.BackColor = [System.Drawing.Color]::FromArgb(60, 60, 60)
-$btnNone.ForeColor = [System.Drawing.Color]::White
-$btnNone.FlatStyle = "Flat"
-$btnNone.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $false) } })
-$form.Controls.Add($btnNone)
+        $clb               = New-Object System.Windows.Forms.CheckedListBox
+        $clb.Location      = New-Object System.Drawing.Point(12, 36)
+        $clb.Size          = New-Object System.Drawing.Size(548, 200)
+        $clb.CheckOnClick  = $true
+        $clb.BackColor     = [System.Drawing.Color]::FromArgb(42, 42, 42)
+        $clb.ForeColor     = [System.Drawing.Color]::White
+        $clb.BorderStyle   = "FixedSingle"
+        $clb.Font          = New-Object System.Drawing.Font("Consolas", 10)
+        foreach ($m in $moduleList) { $clb.Items.Add($m.Label, $true) | Out-Null }
+        $form.Controls.Add($clb)
 
-$btnOK             = New-Object System.Windows.Forms.Button
-$btnOK.Text        = "OK — Download Selected"
-$btnOK.Location    = New-Object System.Drawing.Point(330, 238)
-$btnOK.Size        = New-Object System.Drawing.Size(200, 30)
-$btnOK.BackColor   = [System.Drawing.Color]::FromArgb(0, 120, 215)
-$btnOK.ForeColor   = [System.Drawing.Color]::White
-$btnOK.FlatStyle   = "Flat"
-$btnOK.DialogResult= "OK"
-$form.AcceptButton = $btnOK
-$form.Controls.Add($btnOK)
+        $btnAll            = New-Object System.Windows.Forms.Button
+        $btnAll.Text       = "Select All"
+        $btnAll.Location   = New-Object System.Drawing.Point(12, 248)
+        $btnAll.Size       = New-Object System.Drawing.Size(105, 30)
+        $btnAll.BackColor  = [System.Drawing.Color]::FromArgb(60, 60, 60)
+        $btnAll.ForeColor  = [System.Drawing.Color]::White
+        $btnAll.FlatStyle  = "Flat"
+        $btnAll.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $true) } })
+        $form.Controls.Add($btnAll)
 
-$result = $form.ShowDialog()
+        $btnNone           = New-Object System.Windows.Forms.Button
+        $btnNone.Text      = "Select None"
+        $btnNone.Location  = New-Object System.Drawing.Point(124, 248)
+        $btnNone.Size      = New-Object System.Drawing.Size(105, 30)
+        $btnNone.BackColor = [System.Drawing.Color]::FromArgb(60, 60, 60)
+        $btnNone.ForeColor = [System.Drawing.Color]::White
+        $btnNone.FlatStyle = "Flat"
+        $btnNone.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $false) } })
+        $form.Controls.Add($btnNone)
 
+        $btnOK             = New-Object System.Windows.Forms.Button
+        $btnOK.Text        = "OK — Download Selected"
+        $btnOK.Location    = New-Object System.Drawing.Point(348, 248)
+        $btnOK.Size        = New-Object System.Drawing.Size(212, 30)
+        $btnOK.BackColor   = [System.Drawing.Color]::FromArgb(0, 120, 215)
+        $btnOK.ForeColor   = [System.Drawing.Color]::White
+        $btnOK.FlatStyle   = "Flat"
+        $btnOK.DialogResult= "OK"
+        $form.AcceptButton = $btnOK
+        $form.Controls.Add($btnOK)
+
+        $r = $form.ShowDialog()
+        if ($r -eq "OK") {
+            $sync.OK = $true
+            $checked = @()
+            for ($i = 0; $i -lt $clb.Items.Count; $i++) {
+                if ($clb.GetItemChecked($i)) { $checked += $i }
+            }
+            $sync.Checked = $checked
+        }
+    })
+
+    try   { $ps.Invoke() } catch {}
+    $ps.Dispose()
+    $rs.Close()
+    return $sync
+}
+
+# ── Run selector, fall back to console menu if GUI fails ──────────────────────
 $selectedModules = @()
-if ($result -eq "OK") {
+$guiOk = $false
+
+try {
+    Write-Info "Opening module selector window..."
+    $sync = Show-ModuleForm $modules
+    if ($sync.OK) {
+        $guiOk = $true
+        foreach ($i in $sync.Checked) { $selectedModules += $modules[$i] }
+    } elseif (-not $sync.OK -and $sync.Checked.Count -eq 0) {
+        Write-Warn "Window closed without selecting — defaulting to console menu."
+    }
+} catch {
+    Write-Warn "GUI unavailable — using console menu."
+}
+
+if (-not $guiOk) {
+    # ── Console fallback: numbered toggle menu ─────────────────────────────────
+    $checked = @($true, $true, $true, $true, $true, $true)  # all on by default
+    do {
+        Write-Host ""
+        Write-Host "  Toggle modules with number keys. Enter 0 when done." -ForegroundColor DarkGray
+        Write-Host ""
+        for ($i = 0; $i -lt $modules.Count; $i++) {
+            $tick = if ($checked[$i]) { "[X]" } else { "[ ]" }
+            $col  = if ($checked[$i]) { "Green" } else { "DarkGray" }
+            Write-Host ("  [{0}] {1} {2}" -f ($i+1), $tick, $modules[$i].Label) -ForegroundColor $col
+        }
+        Write-Host ""
+        Write-Host "  [A] Select All   [N] Select None   [0] Confirm" -ForegroundColor Cyan
+        Write-Host ""
+        $k = Read-Host "  Choice"
+        if ($k -eq "A" -or $k -eq "a") { for ($i=0; $i -lt $checked.Count; $i++) { $checked[$i]=$true  } }
+        elseif ($k -eq "N" -or $k -eq "n") { for ($i=0; $i -lt $checked.Count; $i++) { $checked[$i]=$false } }
+        elseif ($k -match '^\d+$' -and [int]$k -ge 1 -and [int]$k -le $modules.Count) {
+            $idx = [int]$k - 1
+            $checked[$idx] = -not $checked[$idx]
+        }
+    } while ($k -ne "0")
+
     for ($i = 0; $i -lt $modules.Count; $i++) {
-        if ($clb.GetItemChecked($i)) { $selectedModules += $modules[$i] }
+        if ($checked[$i]) { $selectedModules += $modules[$i] }
     }
 }
 
+# ── Download selected ──────────────────────────────────────────────────────────
 if ($selectedModules.Count -gt 0) {
     Write-Host ""
     foreach ($m in $selectedModules) {
@@ -242,7 +309,7 @@ if ($selectedModules.Count -gt 0) {
         if ($LASTEXITCODE -eq 0) { Write-OK $m.Key } else { Write-Warn "$($m.Key) failed — skipping" }
     }
 } else {
-    Write-Warn "No modules selected."
+    Write-Warn "No modules selected — skipping downloads."
 }
 
 # ─── Step 5: SD Card Detection ────────────────────────────────────────────────
