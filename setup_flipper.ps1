@@ -149,31 +149,100 @@ if (Test-Path "$UBER_DIR\.git") {
 # ─── Step 4: Community Modules ────────────────────────────────────────────────
 
 Write-Header "Step 4 / 6 — Community Modules"
-Write-Info "Each is a git submodule. Skip any you don't need."
+Write-Info "A selection window will open. Check the modules you want, then click OK."
 Write-Host ""
 
 $modules = @(
-    @{ key="Infrared/IRDB";                label="IR Database (10k+ codes, ~500MB)";           sd=$true  },
-    @{ key="Applications/Momentum-Apps";   label="Momentum FAP Apps (245+ apps)";              sd=$true  },
-    @{ key="Sub-GHz/Community-DB";         label="Sub-GHz Signal DB (community .sub files)";   sd=$true  },
-    @{ key="Sub-GHz/Bruteforce";           label="Sub-GHz Bruteforce Tool";                    sd=$true  },
-    @{ key="Dev/flipper-zero-tutorials";   label="Dev Tutorials (C / GPIO / UART / JS)";       sd=$false },
-    @{ key="Resources/awesome-flipperzero";label="Awesome Flipper — resource index";            sd=$false }
+    [PSCustomObject]@{ Key="Infrared/IRDB";                Label="[→ SD]  IR Database — 10k+ codes (~500 MB)";        SD=$true  },
+    [PSCustomObject]@{ Key="Applications/Momentum-Apps";   Label="[→ SD]  Momentum FAP Apps — 245+ apps";             SD=$true  },
+    [PSCustomObject]@{ Key="Sub-GHz/Community-DB";         Label="[→ SD]  Sub-GHz Signal DB — community .sub files";  SD=$true  },
+    [PSCustomObject]@{ Key="Sub-GHz/Bruteforce";           Label="[→ SD]  Sub-GHz Bruteforce Tool";                   SD=$true  },
+    [PSCustomObject]@{ Key="Dev/flipper-zero-tutorials";   Label="[local] Dev Tutorials — C / GPIO / UART / JS";      SD=$false },
+    [PSCustomObject]@{ Key="Resources/awesome-flipperzero";Label="[local] Awesome Flipper — master resource index";   SD=$false }
 )
 
+# ── Windows Forms checkbox dialog ─────────────────────────────────────────────
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+$form              = New-Object System.Windows.Forms.Form
+$form.Text         = "Flipper Arsenal — Select Modules"
+$form.Size         = New-Object System.Drawing.Size(560, 360)
+$form.StartPosition= "CenterScreen"
+$form.FormBorderStyle = "FixedDialog"
+$form.MaximizeBox  = $false
+$form.Font         = New-Object System.Drawing.Font("Segoe UI", 10)
+$form.BackColor    = [System.Drawing.Color]::FromArgb(30, 30, 30)
+$form.ForeColor    = [System.Drawing.Color]::White
+
+$label             = New-Object System.Windows.Forms.Label
+$label.Text        = "Select modules to download:  [→ SD] = copied to Flipper   [local] = PC only"
+$label.Location    = New-Object System.Drawing.Point(12, 10)
+$label.Size        = New-Object System.Drawing.Size(520, 22)
+$label.ForeColor   = [System.Drawing.Color]::FromArgb(160, 160, 160)
+$form.Controls.Add($label)
+
+$clb               = New-Object System.Windows.Forms.CheckedListBox
+$clb.Location      = New-Object System.Drawing.Point(12, 38)
+$clb.Size          = New-Object System.Drawing.Size(520, 190)
+$clb.CheckOnClick  = $true
+$clb.BackColor     = [System.Drawing.Color]::FromArgb(45, 45, 45)
+$clb.ForeColor     = [System.Drawing.Color]::White
+$clb.BorderStyle   = "FixedSingle"
+$clb.Font          = New-Object System.Drawing.Font("Consolas", 10)
+foreach ($m in $modules) { $clb.Items.Add($m.Label, $true) | Out-Null }  # all checked by default
+$form.Controls.Add($clb)
+
+# Select All / None buttons
+$btnAll            = New-Object System.Windows.Forms.Button
+$btnAll.Text       = "Select All"
+$btnAll.Location   = New-Object System.Drawing.Point(12, 238)
+$btnAll.Size       = New-Object System.Drawing.Size(100, 30)
+$btnAll.BackColor  = [System.Drawing.Color]::FromArgb(60, 60, 60)
+$btnAll.ForeColor  = [System.Drawing.Color]::White
+$btnAll.FlatStyle  = "Flat"
+$btnAll.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $true) } })
+$form.Controls.Add($btnAll)
+
+$btnNone           = New-Object System.Windows.Forms.Button
+$btnNone.Text      = "Select None"
+$btnNone.Location  = New-Object System.Drawing.Point(120, 238)
+$btnNone.Size      = New-Object System.Drawing.Size(100, 30)
+$btnNone.BackColor = [System.Drawing.Color]::FromArgb(60, 60, 60)
+$btnNone.ForeColor = [System.Drawing.Color]::White
+$btnNone.FlatStyle = "Flat"
+$btnNone.Add_Click({ for ($i=0; $i -lt $clb.Items.Count; $i++) { $clb.SetItemChecked($i, $false) } })
+$form.Controls.Add($btnNone)
+
+$btnOK             = New-Object System.Windows.Forms.Button
+$btnOK.Text        = "OK — Download Selected"
+$btnOK.Location    = New-Object System.Drawing.Point(330, 238)
+$btnOK.Size        = New-Object System.Drawing.Size(200, 30)
+$btnOK.BackColor   = [System.Drawing.Color]::FromArgb(0, 120, 215)
+$btnOK.ForeColor   = [System.Drawing.Color]::White
+$btnOK.FlatStyle   = "Flat"
+$btnOK.DialogResult= "OK"
+$form.AcceptButton = $btnOK
+$form.Controls.Add($btnOK)
+
+$result = $form.ShowDialog()
+
 $selectedModules = @()
-foreach ($m in $modules) {
-    $tag = if ($m.sd) { "[→ SD]" } else { "[local]" }
-    if (Ask-YesNo "$tag $($m.label)") { $selectedModules += $m }
+if ($result -eq "OK") {
+    for ($i = 0; $i -lt $modules.Count; $i++) {
+        if ($clb.GetItemChecked($i)) { $selectedModules += $modules[$i] }
+    }
 }
 
 if ($selectedModules.Count -gt 0) {
     Write-Host ""
     foreach ($m in $selectedModules) {
-        Write-Host "  Downloading $($m.key)..." -ForegroundColor Yellow
-        git -C $ARSENAL_DIR submodule update --init --depth 1 -- $m.key
-        if ($LASTEXITCODE -eq 0) { Write-OK $m.key } else { Write-Warn "$($m.key) failed — skipping" }
+        Write-Host "  Downloading $($m.Key)..." -ForegroundColor Yellow
+        git -C $ARSENAL_DIR submodule update --init --depth 1 -- $m.Key
+        if ($LASTEXITCODE -eq 0) { Write-OK $m.Key } else { Write-Warn "$($m.Key) failed — skipping" }
     }
+} else {
+    Write-Warn "No modules selected."
 }
 
 # ─── Step 5: SD Card Detection ────────────────────────────────────────────────
