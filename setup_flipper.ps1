@@ -89,20 +89,63 @@ if ($gitOk) {
 # --- Helpers: find qFlipper exe -----------------------------------------------
 
 function Find-QFlipper {
+    # 1 - common fixed paths
     $pf86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
     $candidates = @(
         "$env:ProgramFiles\qFlipper\qFlipper.exe",
         "$env:ProgramFiles\Flipper Devices\qFlipper\qFlipper.exe",
         "$pf86\qFlipper\qFlipper.exe",
         "$env:LOCALAPPDATA\Programs\qFlipper\qFlipper.exe",
-        "$env:LOCALAPPDATA\Programs\Flipper Devices\qFlipper\qFlipper.exe"
+        "$env:LOCALAPPDATA\Programs\Flipper Devices\qFlipper\qFlipper.exe",
+        "$env:LOCALAPPDATA\qFlipper\qFlipper.exe"
     )
-    foreach ($p in $candidates) {
-        if (Test-Path $p) { return $p }
+    foreach ($p in $candidates) { if (Test-Path $p) { return $p } }
+
+    # 2 - registry uninstall entries (winget installs land here)
+    $regRoots = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    foreach ($root in $regRoots) {
+        $entry = Get-ItemProperty $root -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -match 'qFlipper|Flipper' }
+        if ($entry) {
+            foreach ($e in @($entry)) {
+                if ($e.InstallLocation) {
+                    $exe = Join-Path $e.InstallLocation 'qFlipper.exe'
+                    if (Test-Path $exe) { return $exe }
+                }
+                if ($e.DisplayIcon -and $e.DisplayIcon -match '\.exe') {
+                    $ico = $e.DisplayIcon -replace '",?\d*$', '' -replace '"', ''
+                    if (Test-Path $ico) { return $ico }
+                }
+            }
+        }
     }
-    $found = Get-ChildItem "$env:ProgramFiles" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+    # 3 - Start Menu + Desktop shortcuts
+    $lnkDirs = @(
+        "$env:APPDATA\Microsoft\Windows\Start Menu\Programs",
+        "$env:ProgramData\Microsoft\Windows\Start Menu\Programs",
+        "$env:USERPROFILE\Desktop",
+        "$env:PUBLIC\Desktop"
+    )
+    foreach ($dir in $lnkDirs) {
+        $lnk = Get-ChildItem $dir -Recurse -Filter '*qFlipper*' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($lnk) {
+            try {
+                $shell = New-Object -ComObject WScript.Shell
+                $sc = $shell.CreateShortcut($lnk.FullName)
+                if (Test-Path $sc.TargetPath) { return $sc.TargetPath }
+            } catch {}
+        }
+    }
+
+    # 4 - recursive filesystem fallback
+    $found = Get-ChildItem "$env:ProgramFiles" -Recurse -Filter 'qFlipper.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($found) { return $found.FullName }
-    $found = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    $found = Get-ChildItem "$env:LOCALAPPDATA" -Recurse -Filter 'qFlipper.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($found) { return $found.FullName }
     return $null
 }
