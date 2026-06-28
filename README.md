@@ -8,13 +8,15 @@ Built on [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper) + community
 
 ## Quick Start (Windows)
 
-**One script. Double-click and follow the menu.**
+**Single command — paste into PowerShell and press Enter. Nothing else needed.**
 
+```powershell
+irm https://raw.githubusercontent.com/The-AI-Workshops/Flipper-arsenal/main/setup_flipper.ps1 | iex
 ```
-1. Clone or download this repo
-2. Double-click setup_flipper.bat
-3. Answer the prompts
-```
+
+Opens in PowerShell (Win + X → Terminal, or search "PowerShell"). No admin required. No downloads before running.
+
+> **Already cloned?** Run `setup_flipper.bat` directly — it detects existing files and pulls latest.
 
 No manual config. No editing files. Everything is interactive.
 
