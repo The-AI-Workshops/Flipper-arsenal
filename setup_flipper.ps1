@@ -86,6 +86,25 @@ if ($gitOk) {
     }
 }
 
+# ─── Helpers: find qFlipper exe ───────────────────────────────────────────────
+
+function Find-QFlipper {
+    $candidates = @(
+        "$env:ProgramFiles\qFlipper\qFlipper.exe",
+        "$env:ProgramFiles\Flipper Devices\qFlipper\qFlipper.exe",
+        "${env:ProgramFiles(x86)}\qFlipper\qFlipper.exe",
+        "$env:LOCALAPPDATA\Programs\qFlipper\qFlipper.exe",
+        "$env:LOCALAPPDATA\Programs\Flipper Devices\qFlipper\qFlipper.exe"
+    )
+    foreach ($p in $candidates) { if (Test-Path $p) { return $p } }
+    # Brute-force search under Program Files as fallback
+    $found = Get-ChildItem "$env:ProgramFiles" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) { return $found.FullName }
+    $found = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter "qFlipper.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) { return $found.FullName }
+    return $null
+}
+
 # ─── Step 2: qFlipper ─────────────────────────────────────────────────────────
 
 Write-Header "Step 2 / 6 — qFlipper"
@@ -93,35 +112,43 @@ Write-Info "Official desktop app: firmware updates, file manager, screen streami
 Write-Host ""
 
 if (Ask-YesNo "Install qFlipper?") {
-    $wingetOk = $false
-    try {
-        $wg = winget list --id Flipper.qFlipper 2>&1
-        if ($wg -match "Flipper") {
-            Write-OK "qFlipper already installed."
-            $wingetOk = $true
-        }
-    } catch {}
-
-    if (-not $wingetOk) {
+    # Check if already installed first
+    $qfExe = Find-QFlipper
+    if ($qfExe) {
+        Write-OK "qFlipper already installed: $qfExe"
+    } else {
+        $wingetOk = $false
         try {
             winget install --id Flipper.qFlipper -e --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
-            Write-OK "qFlipper installed via winget."
-            $wingetOk = $true
+            if ($LASTEXITCODE -eq 0) {
+                $wingetOk = $true
+                Write-OK "qFlipper installed via winget."
+            }
         } catch {}
-    }
 
-    if (-not $wingetOk) {
-        Write-Warn "winget unavailable. Downloading installer directly..."
-        $qfPath = "$env:TEMP\qFlipper_installer.exe"
-        try {
-            Invoke-WebRequest -Uri $QFLIPPER_URL -OutFile $qfPath -UseBasicParsing
-            Write-Host "  Launching qFlipper installer — follow the wizard..." -ForegroundColor Yellow
-            Start-Process -FilePath $qfPath -Wait
-            Write-OK "qFlipper installer completed."
-        } catch {
-            Write-Err "Download failed: $_"
-            Write-Warn "Get it manually: https://flipperzero.one/update"
+        if (-not $wingetOk) {
+            Write-Warn "winget unavailable. Downloading installer directly..."
+            $qfPath = "$env:TEMP\qFlipper_installer.exe"
+            try {
+                Invoke-WebRequest -Uri $QFLIPPER_URL -OutFile $qfPath -UseBasicParsing
+                Write-Host "  Launching qFlipper installer — follow the wizard..." -ForegroundColor Yellow
+                Start-Process -FilePath $qfPath -Wait
+                Write-OK "qFlipper installer completed."
+            } catch {
+                Write-Err "Download failed: $_"
+                Write-Warn "Get it manually: https://flipperzero.one/update"
+            }
         }
+
+        # Locate after install
+        $qfExe = Find-QFlipper
+        if ($qfExe) {
+            Write-OK "Found: $qfExe"
+        } else {
+            Write-Warn "Installed but exe not found in common paths."
+            Write-Info "Search for qFlipper.exe in Start Menu or Program Files."
+        }
+    }
     }
 } else {
     Write-Warn "Skipping qFlipper."
@@ -421,6 +448,15 @@ if ($flipperDrive) {
 }
 Write-Host "  Arsenal location : $ARSENAL_DIR" -ForegroundColor Green
 Write-Host "  Core files       : $UBER_DIR" -ForegroundColor Green
+
+# Show qFlipper location
+$qfFinal = Find-QFlipper
+if ($qfFinal) {
+    Write-Host "  qFlipper         : $qfFinal" -ForegroundColor Green
+} else {
+    Write-Host "  qFlipper         : not found — search Start Menu" -ForegroundColor Magenta
+}
+
 Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor White
 Write-Info "1. Safely eject $flipperDrive in File Explorer (right-click → Eject)"
@@ -429,4 +465,9 @@ Write-Info "3. Flash Momentum firmware via qFlipper:"
 Write-Info "   github.com/Next-Flip/Momentum-Firmware/releases"
 Write-Info "4. To update all repos later: run setup_flipper.bat again"
 Write-Host ""
+
+if ($qfFinal -and (Ask-YesNo "Launch qFlipper now?")) {
+    Start-Process $qfFinal
+}
+
 Read-Host "  Press Enter to exit"
