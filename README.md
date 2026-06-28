@@ -6,6 +6,33 @@ Built on [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper) + community
 
 ---
 
+## Claude Code Skill
+
+If you use [Claude Code](https://claude.ai/code), install the bundled skill to give Claude deep Flipper Zero knowledge — FAP development, JS scripting, GPIO wiring, signal file formats, Momentum features, WiFi devboard, and the full 243-app catalog.
+
+### Install
+
+1. Download [`Resources/flipper-zero.skill`](Resources/flipper-zero.skill)
+2. In Claude Code, run:
+   ```
+   /install-skill /path/to/flipper-zero.skill
+   ```
+3. Skill activates automatically on any Flipper-related prompt.
+
+### What it knows
+
+| Reference | Content |
+|---|---|
+| FAP development | uFBT, fbt, scene manager, ViewDispatcher, GPIO/Sub-GHz/NFC C APIs, 8 templates |
+| JS scripting | All 13 modules (5 standard + 8 Momentum-exclusive), ADC/DAC/SPI/tones examples |
+| Hardware | GPIO pinout, furi_hal API, BlackMagic GDB, ESP32 Marauder, DAP Link |
+| Signal databases | .ir/.sub/.nfc/.rfid formats, IRDB 49 categories, Sub-GHz bruteforce sets |
+| Firmware | Momentum vs Unleashed, Asset Packs, Bad-KB, rolling code, extended Sub-GHz |
+| Community | 243 Momentum apps by category, awesome-flipperzero index, update commands |
+| Windows setup | Installer walkthrough, qFlipper, Mass Storage mode |
+
+---
+
 ## Quick Start (Windows)
 
 **Single command — paste into PowerShell and press Enter. Nothing else needed.**
