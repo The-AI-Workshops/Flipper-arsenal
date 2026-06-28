@@ -2,167 +2,211 @@
 
 > Curated Flipper Zero loadout for Momentum firmware — signal DBs, FAPs, JS scripts, BadUSB payloads & community repos, auto-updated daily.
 
-Forked from [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper) and extended with Momentum firmware focus, community repo aggregation, and auto-sync tooling.
+Built on [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper) + community submodules. Optimized for [Momentum firmware](https://github.com/Next-Flip/Momentum-Firmware).
 
 ---
 
 ## Quick Start (Windows)
 
-**One script does everything — git, qFlipper, repo clone, module selection, SD copy.**
+**One script. Double-click and follow the menu.**
 
 ```
-1. Download or clone this repo
-2. Double-click  setup_flipper.bat
-3. Follow the interactive menu
+1. Clone or download this repo
+2. Double-click setup_flipper.bat
+3. Answer the prompts
 ```
 
-### What the installer does
+No manual config. No editing files. Everything is interactive.
 
-| Step | Action |
+---
+
+## What the Installer Does
+
+`setup_flipper.bat` launches `setup_flipper.ps1` — a 6-step interactive installer:
+
+### Step 1 — Git
+Checks if Git is installed. If not, downloads and silently installs the official Git for Windows.
+
+### Step 2 — qFlipper
+Offers to install the official Flipper desktop app.
+- Tries `winget install Flipper.qFlipper` first (silent, no browser)
+- Falls back to direct installer download if winget unavailable
+- Skips if already installed
+
+### Step 3 — Clone Repos
+Clones two repos automatically:
+
+| Repo | Purpose | Method |
+|---|---|---|
+| `The-AI-Workshops/Flipper-arsenal` | This repo — community modules, guides, scripts | Full clone |
+| `UberGuidoZ/Flipper` | Core signal files (IR, Sub-GHz, NFC, BadUSB, Graphics) | Shallow `--depth 1` (fast) |
+
+If repos already exist locally, pulls latest changes instead.
+
+### Step 4 — Module Selection
+Picks which community repos to download. Each is optional:
+
+```
+[→ SD] IR Database (10k+ codes, ~500MB)?          [Y/N]
+[→ SD] Momentum FAP Apps (245+ apps)?              [Y/N]
+[→ SD] Sub-GHz Signal DB (community .sub files)?   [Y/N]
+[→ SD] Sub-GHz Bruteforce Tool?                    [Y/N]
+[local] Dev Tutorials (C / GPIO / UART / JS)?      [Y/N]
+[local] Awesome Flipper — resource index?           [Y/N]
+```
+
+`[→ SD]` = goes onto the Flipper SD card.  
+`[local]` = stays on your PC for reference/dev.
+
+### Step 5 — SD Card Detection
+Flipper must be connected in **Mass Storage mode** (`Settings → USB → Mass Storage`).
+
+The installer auto-detects removable drives:
+- **1 drive found** → shows name + size, asks to confirm or override
+- **Multiple drives** → numbered list, pick by number
+- **None found** → prompts manual letter entry
+
+### Step 6 — Copy Files to SD
+Copies everything to the correct SD paths automatically:
+
+| Source | SD Path |
 |---|---|
-| 1 | Installs **Git** if missing (silent, via official installer) |
-| 2 | Installs **qFlipper** — official Flipper desktop app (via winget or direct download) |
-| 3 | Clones **this repo** (`The-AI-Workshops/Flipper-arsenal`) or pulls latest |
-| 4 | **Interactive module selection** — pick only what you want |
-| 5 | Auto-detects SD card drive letter, copies files to correct paths |
+| `UberGuidoZ/Infrared/` | `SD:/infrared/` |
+| `UberGuidoZ/Sub-GHz/` | `SD:/subghz/` |
+| `UberGuidoZ/NFC/` | `SD:/nfc/` |
+| `UberGuidoZ/RFID/` | `SD:/lfrfid/` |
+| `UberGuidoZ/BadUSB/` | `SD:/badusb/` |
+| `UberGuidoZ/Music_Player/` | `SD:/music_player/` |
+| `UberGuidoZ/Wav_Player/` | `SD:/wav_player/` |
+| `UberGuidoZ/Graphics/` + `Dolphin_Level/` | `SD:/dolphin/` |
+| `Infrared/IRDB/` | `SD:/infrared/IRDB/` |
+| `Applications/Momentum-Apps/` | `SD:/apps/` |
+| `Sub-GHz/Community-DB/` | `SD:/subghz/community/` |
+| `Sub-GHz/Bruteforce/` | `SD:/subghz/Bruteforce/` |
 
-### Module Selection Menu
-
-The installer asks which community repos to download:
-
-```
-Install IR Signal Database (~500MB, 10k+ codes)?  [Y/N]
-Install Momentum FAP Apps (245+ apps)?            [Y/N]
-Install Sub-GHz Signal DB?                         [Y/N]
-Install Sub-GHz Bruteforce Tool?                   [Y/N]
-Install Dev Tutorials (C/GPIO/UART/JS)?            [Y/N]
-Install Awesome Flipper index?                     [Y/N]
-```
-
-Skip anything you don't need. Core files always install.
+Reports file count per folder. Skips gracefully if a module wasn't downloaded.
 
 ### After Install
 
-1. Safely eject the SD card in File Explorer
-2. Press **Back** on Flipper to rescan
-3. Update firmware to Momentum via qFlipper:
-   → `github.com/Next-Flip/Momentum-Firmware/releases`
+1. **Eject** the SD card in File Explorer (right-click → Eject)
+2. **Press Back** on Flipper to rescan SD
+3. **Flash Momentum** via qFlipper → `github.com/Next-Flip/Momentum-Firmware/releases`
 
-### If you already have the repo cloned
+---
 
-```powershell
-# Pull latest + update all submodules
+## Re-running / Updating
+
+Run `setup_flipper.bat` again anytime — it detects existing clones and pulls latest instead of re-cloning.
+
+Or update repos directly:
+
+```bash
+# Linux/macOS/WSL
 bash update_all.sh
 
-# Or just run the installer again — it detects existing clone and pulls
-setup_flipper.bat
+# Pulls: main repo + all submodules + community clones
+# Logs to: update_all.log
 ```
 
 ---
 
 ## What's Inside
 
-### Signal Files
+### Signal Files (via UberGuidoZ + community submodules)
 
-| Folder | Content |
+| Path | Content |
 |---|---|
-| `Infrared/` | IR codes — TVs, ACs, fans, projectors, audio |
-| `Infrared/IRDB/` | [Lucaslhm/Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) — primary community IR database (CC0-1.0) |
-| `Sub-GHz/` | Sub-GHz signals — garage doors, remotes, pagers, vehicles |
+| `_UberGuidoZ/Infrared/` | IR codes — TVs, ACs, fans, projectors, audio |
+| `Infrared/IRDB/` | [Lucaslhm/Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) — 10k+ IR codes (CC0-1.0) |
+| `_UberGuidoZ/Sub-GHz/` | Sub-GHz — garage, remotes, pagers, vehicles |
 | `Sub-GHz/Community-DB/` | [Zero-Sploit/FlipperZero-Subghz-DB](https://github.com/Zero-Sploit/FlipperZero-Subghz-DB) |
 | `Sub-GHz/Bruteforce/` | [tobiabocchi/flipperzero-bruteforce](https://github.com/tobiabocchi/flipperzero-bruteforce) |
-| `NFC/` | NFC dumps, Amiibo, tags |
-| `RFID/` | 125kHz RFID files |
-| `BadUSB/` | DuckyScript 1.0 payloads (`.txt`) — 100+ scripts |
+| `_UberGuidoZ/NFC/` | NFC dumps, Amiibo, tags |
+| `_UberGuidoZ/RFID/` | 125kHz RFID files |
+| `_UberGuidoZ/BadUSB/` | DuckyScript 1.0 payloads — 100+ scripts |
 
 ### Apps & Dev
 
-| Folder | Content |
+| Path | Content |
 |---|---|
 | `Applications/Momentum-Apps/` | [Next-Flip/Momentum-Apps](https://github.com/Next-Flip/Momentum-Apps) — 245+ FAPs for Momentum |
-| `Applications/Official/` | Official firmware FAPs |
-| `Dev/flipper-zero-tutorials/` | [jamisonderek](https://github.com/jamisonderek/flipper-zero-tutorials) — C, GPIO, UART, JS guides |
-| `Resources/awesome-flipperzero/` | [djsime1/awesome-flipperzero](https://github.com/djsime1/awesome-flipperzero) — master resource index |
+| `Dev/flipper-zero-tutorials/` | [jamisonderek](https://github.com/jamisonderek/flipper-zero-tutorials) — C, GPIO, UART, JS |
+| `Resources/awesome-flipperzero/` | [djsime1/awesome-flipperzero](https://github.com/djsime1/awesome-flipperzero) — master index |
 
-### Other
+### Docs
 
-| Folder | Content |
+| File | Content |
 |---|---|
-| `Graphics/` | Animations, themes, wallpapers |
-| `Music_Player/` | `.fmf` music files |
-| `Wav_Player/` | `.wav` audio |
-| `GPIO/` | GPIO wiring guides |
-| `Wifi_DevBoard/` | ESP32 devboard guides + schematic |
+| `FLIPPER_MOMENTUM_GUIDE.md` | Full research guide — Sub-GHz, FAPs, JS, GPIO, WiFi devboard |
+| `setup_flipper.bat` | Windows installer launcher |
+| `setup_flipper.ps1` | Full interactive PowerShell installer |
+| `update_all.sh` | Linux/macOS auto-updater |
 
 ---
 
 ## Momentum Firmware
 
-This repo is optimized for **[Momentum firmware](https://github.com/Next-Flip/Momentum-Firmware)** — the most feature-complete Flipper firmware as of 2026.
+Recommended firmware. Key advantages over Official:
 
-Key advantages over Official firmware:
-- **183+ preinstalled FAPs** (OFW ships 3)
-- **Extended Sub-GHz** — 281–962 MHz (beyond CC1101 spec)
-- **Bad-KB** — BadUSB over Bluetooth, no cable needed
-- **Asset Packs** — themes/animations without recompile
-- **Expanded JS modules** — BLE, SubGHz, I2C, SPI, USB disk, NFC
+| Feature | Momentum | Official |
+|---|---|---|
+| Preinstalled FAPs | 183+ | 3 |
+| Sub-GHz range | 281–962 MHz | 300–928 MHz |
+| BadUSB over BLE | Yes (Bad-KB) | No |
+| Themes (Asset Packs) | Yes | No |
+| JS scripting modules | 13+ | 9 |
 
-> FAPs from this repo (`Applications/Momentum-Apps/`) are **not compatible** with Official firmware. Momentum/RogueMaster/Unleashed FAPs are interchangeable with each other.
+> FAPs in `Applications/Momentum-Apps/` are **not compatible** with Official firmware.  
+> Momentum ↔ RogueMaster ↔ Unleashed FAPs are interchangeable.
 
 ---
 
-## SD Card Layout
+## SD Card Structure
 
 ```
 SD:/
-├── infrared/        ← copy from Infrared/
-├── subghz/          ← copy from Sub-GHz/
-├── nfc/             ← copy from NFC/
-├── lfrfid/          ← copy from RFID/
-├── badusb/          ← copy from BadUSB/
-├── apps/            ← copy from Applications/Momentum-Apps/
-├── asset_packs/     ← Momentum themes
-├── scripts/         ← .js JavaScript files
-├── dolphin/         ← copy from Graphics/ + Dolphin_Level/
-└── favorites.txt    ← quick-access items (/any/ prefix)
+├── infrared/           ← IR remotes (.ir)
+│   └── IRDB/           ← 10k+ community IR codes
+├── subghz/             ← Sub-GHz signals (.sub)
+│   ├── community/      ← community DB
+│   └── Bruteforce/     ← brute force files
+├── nfc/                ← NFC cards/tags (.nfc)
+├── lfrfid/             ← 125kHz RFID (.rfid)
+├── badusb/             ← DuckyScript payloads (.txt)
+├── apps/               ← FAP apps by category
+│   ├── GPIO/
+│   ├── Tools/
+│   ├── Games/
+│   ├── Bluetooth/
+│   └── ...
+├── asset_packs/        ← Momentum themes
+├── scripts/            ← JS scripts (.js)
+├── dolphin/            ← animations + level files
+├── music_player/       ← music (.fmf)
+├── wav_player/         ← audio (.wav)
+└── favorites.txt       ← quick-access shortcuts
 ```
 
-`setup_flipper.bat` handles all of this automatically.
-
----
-
-## Auto-Update
-
-Pull all repos (main + submodules + community clones):
-
-```bash
-bash update_all.sh
+`favorites.txt` uses `/any/` prefix:
 ```
-
-Runs automatically at **3:23 AM daily** when Claude session is active.
-Logs to `update_all.log`.
-
-Community repos updated:
-- `Next-Flip/Momentum-Apps`
-- `jamisonderek/flipper-zero-tutorials`
-- `djsime1/awesome-flipperzero`
-- `Zero-Sploit/FlipperZero-Subghz-DB`
-- `tobiabocchi/flipperzero-bruteforce`
-- All git submodules
+/any/nfc/my_card.nfc
+/any/subghz/garage.sub
+/any/badusb/payload.txt
+```
 
 ---
 
 ## JavaScript Scripting (Momentum)
 
-Drop `.js` on SD → Apps → Scripts. No compile, no PC needed.
+Drop `.js` on SD → Apps → Scripts. No compile needed.
 
 ```js
 // GPIO
 let gpio = require("gpio");
 gpio.init("PC3", "outputPushPull", "up");
-gpio.write("PC3", true);
+gpio.write("PC3", true);   // 3.3V
 
-// UART serial read
+// UART read
 let serial = require("serial");
 serial.setup("usart", 115200);
 serial.write("help\r\n");
@@ -174,38 +218,36 @@ ble.setConfig("MyDevice", "random", [0x1E,0xFF,0x4C,0x00,0x12,0x19]);
 ble.start();
 ```
 
-**Momentum-exclusive modules:** `blebeacon` `subghz` `i2c` `spi` `usbdisk` `nfc` `infrared`
+**Momentum-exclusive modules:** `blebeacon` · `subghz` · `i2c` · `spi` · `usbdisk` · `nfc` · `infrared`
 
-Full guide: [`FLIPPER_MOMENTUM_GUIDE.md`](FLIPPER_MOMENTUM_GUIDE.md)
+Full reference: [`FLIPPER_MOMENTUM_GUIDE.md`](FLIPPER_MOMENTUM_GUIDE.md)
 
 ---
 
 ## WiFi Dev Board
 
-| Mode | Use |
-|---|---|
-| **BlackMagic** (default) | Wireless GDB — debug Flipper's own MCU over WiFi |
-| **ESP32 Marauder** | Deauth, PMKID capture, evil portal, wardriving |
+| Mode | How | Use |
+|---|---|---|
+| **BlackMagic** (default) | Connects over WiFi | Wireless GDB debugger for Flipper MCU |
+| **ESP32 Marauder** | Flash via `esp32_wifi_marauder.fap` | Deauth, PMKID, evil portal, wardriving |
 
-BlackMagic: SSID `blackmagic` / PW `iamwitcher` / GDB at `192.168.4.1:2345`
-
-Flash Marauder via `esp32_wifi_marauder.fap` on Flipper.
+BlackMagic: SSID `blackmagic` · PW `iamwitcher` · GDB `192.168.4.1:2345`
 
 ---
 
 ## Building FAPs
 
 ```bash
-# Install uFBT targeting Momentum
+# Install uFBT for Momentum
 py -m pip install --upgrade ufbt
 ufbt update --index-url https://up.momentum-fw.dev/firmware/index.json
 
-# Build + deploy
+# Build + flash
 ufbt build
 ufbt launch
 ```
 
-See [`Dev/flipper-zero-tutorials/`](Dev/flipper-zero-tutorials/) for GPIO, UART, and JS examples.
+See [`Dev/flipper-zero-tutorials/`](Dev/flipper-zero-tutorials/) for full C and JS examples.
 
 ---
 
@@ -214,14 +256,15 @@ See [`Dev/flipper-zero-tutorials/`](Dev/flipper-zero-tutorials/) for GPIO, UART,
 | Resource | Link |
 |---|---|
 | Momentum Firmware | [Next-Flip/Momentum-Firmware](https://github.com/Next-Flip/Momentum-Firmware) |
+| Momentum Apps | [Next-Flip/Momentum-Apps](https://github.com/Next-Flip/Momentum-Apps) |
 | Signal search | [search.flippertools.net](https://search.flippertools.net) |
 | IR database | [Lucaslhm/Flipper-IRDB](https://github.com/Lucaslhm/Flipper-IRDB) |
-| Master index | [djsime1/awesome-flipperzero](https://github.com/djsime1/awesome-flipperzero) |
 | Dev tutorials | [jamisonderek/flipper-zero-tutorials](https://github.com/jamisonderek/flipper-zero-tutorials) |
 | uFBT | [flipperdevices/flipperzero-ufbt](https://github.com/flipperdevices/flipperzero-ufbt) |
+| Master index | [djsime1/awesome-flipperzero](https://github.com/djsime1/awesome-flipperzero) |
 | Official docs | [docs.flipperzero.one](https://docs.flipperzero.one) |
 | Official Discord | [discord.com/invite/flipper](https://discord.com/invite/flipper) |
 
 ---
 
-*Based on [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper). Credits to all upstream contributors.*
+*Built on [UberGuidoZ/Flipper](https://github.com/UberGuidoZ/Flipper). Credits to all upstream contributors and community repo authors.*
